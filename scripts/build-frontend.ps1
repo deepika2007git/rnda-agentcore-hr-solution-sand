@@ -18,14 +18,27 @@ Write-Host "  User Pool Client ID: $UserPoolClientId"
 Write-Host "  Agent Runtime ARN: $AgentRuntimeArn"
 Write-Host "  Region: $Region"
 
-# Set environment variables for build
-$env:VITE_USER_POOL_ID = $UserPoolId
-$env:VITE_USER_POOL_CLIENT_ID = $UserPoolClientId
-$env:VITE_AGENT_RUNTIME_ARN = $AgentRuntimeArn
-$env:VITE_REGION = $Region
+# Create production environment file (overrides .env.local)
+Set-Location frontend
+
+# Remove local development environment file if it exists
+if (Test-Path ".env.local") {
+    Write-Host "Removing local development environment file..."
+    Remove-Item ".env.local"
+}
+
+# Create production environment file
+@"
+VITE_USER_POOL_ID=$UserPoolId
+VITE_USER_POOL_CLIENT_ID=$UserPoolClientId
+VITE_AGENT_RUNTIME_ARN=$AgentRuntimeArn
+VITE_REGION=$Region
+VITE_LOCAL_DEV=false
+"@ | Out-File -FilePath ".env.production.local" -Encoding UTF8
+
+Write-Host "Created production environment configuration"
 
 # Build frontend
-Set-Location frontend
 npm run build
 
 Set-Location ..

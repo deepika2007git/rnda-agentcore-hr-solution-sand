@@ -41,10 +41,18 @@ cd ..
 
 # Create local environment file for frontend
 echo "⚙️  Setting up local environment..."
+
+# Remove any production environment file
+if [ -f "frontend/.env.production.local" ]; then
+    rm frontend/.env.production.local
+fi
+
 cat > frontend/.env.local << EOF
 VITE_LOCAL_DEV=true
 VITE_AGENT_RUNTIME_URL=/api
 EOF
+
+echo "Created local development environment configuration"
 
 echo ""
 echo "🎯 Starting services..."

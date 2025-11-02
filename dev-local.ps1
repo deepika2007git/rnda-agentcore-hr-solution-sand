@@ -38,10 +38,18 @@ Pop-Location
 
 # Create local environment file for frontend
 Write-Host "⚙️  Setting up local environment..." -ForegroundColor Yellow
+
+# Remove any production environment file
+if (Test-Path "frontend/.env.production.local") {
+    Remove-Item "frontend/.env.production.local"
+}
+
 @"
 VITE_LOCAL_DEV=true
 VITE_AGENT_RUNTIME_URL=/api
 "@ | Out-File -FilePath "frontend/.env.local" -Encoding UTF8
+
+Write-Host "Created local development environment configuration" -ForegroundColor Gray
 
 Write-Host ""
 Write-Host "🎯 Starting services..." -ForegroundColor Green

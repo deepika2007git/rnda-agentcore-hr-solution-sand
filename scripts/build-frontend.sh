@@ -20,15 +20,29 @@ echo "  User Pool Client ID: $USER_POOL_CLIENT_ID"
 echo "  Agent Runtime ARN: $AGENT_RUNTIME_ARN"
 echo "  Region: $REGION"
 
-# Set environment variables for build
-export VITE_USER_POOL_ID="$USER_POOL_ID"
-export VITE_USER_POOL_CLIENT_ID="$USER_POOL_CLIENT_ID"
-export VITE_AGENT_RUNTIME_ARN="$AGENT_RUNTIME_ARN"
-export VITE_REGION="$REGION"
+# Create production environment file (overrides .env.local)
+pushd frontend > /dev/null
+
+# Remove local development environment file if it exists
+if [ -f ".env.local" ]; then
+    echo "Removing local development environment file..."
+    rm .env.local
+fi
+
+# Create production environment file
+cat > .env.production.local << EOF
+VITE_USER_POOL_ID=$USER_POOL_ID
+VITE_USER_POOL_CLIENT_ID=$USER_POOL_CLIENT_ID
+VITE_AGENT_RUNTIME_ARN=$AGENT_RUNTIME_ARN
+VITE_REGION=$REGION
+VITE_LOCAL_DEV=false
+EOF
+
+echo "Created production environment configuration"
 
 # Build frontend
-pushd frontend > /dev/null
 npm run build
+
 popd > /dev/null
 
 echo "Frontend build complete"

@@ -15,10 +15,12 @@ import PromptInput from '@cloudscape-design/components/prompt-input';
 import Alert from '@cloudscape-design/components/alert';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import AuthModal from './AuthModal';
-import { getCurrentUser, getIdToken, signOut, AuthUser } from './auth';
 import { invokeAgent } from './agentcore';
 import './markdown.css';
+
+interface AuthUser {
+  email: string;
+}
 
 interface Message {
   type: 'user' | 'agent';
@@ -37,6 +39,9 @@ interface MessageFeedback {
 }
 
 function App() {
+  const isLocalDev = (import.meta as any).env.VITE_LOCAL_DEV === 'true';
+
+  // All hooks declared at the top level to maintain consistent order
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
@@ -46,13 +51,33 @@ function App() {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [messageFeedback, setMessageFeedback] = useState<MessageFeedback>({});
   const [showSupportPrompts, setShowSupportPrompts] = useState(true);
+  const [AuthModalComponent, setAuthModalComponent] = useState<any>(null);
 
+  // Authentication effect
   useEffect(() => {
-    checkAuth();
-  }, []);
+    if (isLocalDev) {
+      // Skip authentication in local development mode
+      setCheckingAuth(false);
+      setUser({ email: 'local-dev@example.com' } as AuthUser);
+    } else {
+      checkAuth();
+    }
+  }, [isLocalDev]);
+
+  // AuthModal loading effect
+  useEffect(() => {
+    if (!isLocalDev && showAuthModal && !AuthModalComponent) {
+      import('./AuthModal').then(module => {
+        setAuthModalComponent(() => module.default);
+      });
+    }
+  }, [showAuthModal, AuthModalComponent, isLocalDev]);
 
   const checkAuth = async () => {
+    if (isLocalDev) return;
+
     try {
+      const { getCurrentUser } = await import('./auth');
       const currentUser = await getCurrentUser();
       setUser(currentUser);
     } catch (err) {
@@ -62,8 +87,15 @@ function App() {
     }
   };
 
-  const handleSignOut = () => {
-    signOut();
+  const handleSignOut = async () => {
+    if (isLocalDev) return;
+
+    try {
+      const { signOut } = await import('./auth');
+      signOut();
+    } catch (err) {
+      console.error('Error signing out:', err);
+    }
     setUser(null);
     setMessages([]);
   };
@@ -119,13 +151,10 @@ function App() {
       (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
       cleaned = cleaned.slice(1, -1);
     }
-
     // Replace literal \n with actual newlines
     cleaned = cleaned.replace(/\\n/g, '\n');
-
     // Replace literal \t with actual tabs
     cleaned = cleaned.replace(/\\t/g, '\t');
-
     return cleaned;
   };
 
@@ -137,7 +166,7 @@ function App() {
   };
 
   const handleSendMessage = async () => {
-    if (!user) {
+    if (!isLocalDev && !user) {
       setShowAuthModal(true);
       return;
     }
@@ -172,7 +201,6 @@ function App() {
       };
 
       setMessages(prev => [...prev, agentMessage]);
-
       // Show support prompts after agent responds
       setShowSupportPrompts(true);
     } catch (err: any) {
@@ -235,8 +263,6 @@ function App() {
     ];
   };
 
-
-
   if (checkingAuth) {
     return (
       <>
@@ -283,17 +309,27 @@ function App() {
 
   return (
     <>
-      <AuthModal
-        visible={showAuthModal}
-        onDismiss={() => setShowAuthModal(false)}
-        onSuccess={handleAuthSuccess}
-      />
+      {!isLocalDev && AuthModalComponent && (
+        <AuthModalComponent
+          visible={showAuthModal}
+          onDismiss={() => setShowAuthModal(false)}
+          onSuccess={handleAuthSuccess}
+        />
+      )}
       <TopNavigation
         identity={{
           href: "#",
-          title: "Amazon Bedrock AgentCore Demo"
+          title: isLocalDev
+            ? "Amazon Bedrock AgentCore Demo (Local Dev)"
+            : "Amazon Bedrock AgentCore Demo"
         }}
-        utilities={[
+        utilities={isLocalDev ? [
+          {
+            type: "button",
+            text: "Local Development",
+            iconName: "settings"
+          }
+        ] : [
           {
             type: "button",
             text: user ? `${user.email} | Sign Out` : "Sign In",

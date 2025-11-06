@@ -108,12 +108,24 @@ This will:
 5. Configure the frontend to call the local agent (no authentication required)
 
 **Local Development Features:**
-- ✅ Hot reload for both frontend and agent changes
+- ✅ Frontend hot reload (Vite dev server)
+- ✅ Fast agent restart cycle (no deployment needed)
 - ✅ Authentication with Cognito is bypassed
 - ✅ Same agent code as production
-- ✅ Fast iteration cycle
+- ✅ Rapid iteration without AWS deployment
 
-**Note:** Local development uses the same `strands_agent.py` file as production. Changes made locally will be reflected when you deploy.
+**How Local Development Works:**
+- `python strands_agent.py` starts your agent as a regular Python process
+- `app.run()` in `strands_agent.py` creates HTTP server on `localhost:8080` (via `bedrock-agentcore` library)
+- Frontend sends POST requests to `/api/invocations`
+- Agent executes directly in Python, calls AWS Bedrock APIs
+- No Docker, no containers needed - just Python + web server
+
+**Development Workflow:**
+- **Frontend changes** (`frontend/` files): Hot reload automatically via Vite
+- **Agent changes** (`agent/` files): Restart required - Ctrl+C then re-run script
+
+**Note:** Agent restart takes ~10 seconds vs ~10 minutes for production deployment.
 
 ## Stack Architecture
 
@@ -128,13 +140,13 @@ This will:
 
 ```
 project-root/
-├── agent/                      # Agent runtime code
+├── agent/                     # Agent runtime code
 │   ├── strands_agent.py       # Agent implementation (Strands framework)
 │   ├── requirements.txt       # Python dependencies
 │   ├── Dockerfile             # ARM64 container definition
 │   └── .dockerignore          # Docker ignore patterns
 │
-├── cdk/                        # Infrastructure as Code
+├── cdk/                       # Infrastructure as Code
 │   ├── bin/
 │   │   └── app.ts             # CDK app entry point
 │   ├── lib/
@@ -146,7 +158,7 @@ project-root/
 │   └── package.json           # CDK dependencies
 │
 
-├── frontend/                   # React app (Vite)
+├── frontend/                  # React app (Vite)
 │   ├── src/
 │   │   ├── App.tsx            # Main UI component with auth
 │   │   ├── AuthModal.tsx      # Login/signup modal
@@ -162,6 +174,8 @@ project-root/
 │
 ├── deploy-all.ps1             # Main deployment orchestration (Windows)
 ├── deploy-all.sh              # Main deployment orchestration (macOS/Linux)
+├── dev-local.ps1              # Local development mode (Windows)
+├── dev-local.sh               # Local development mode (macOS/Linux)
 └── README.md                  # This file
 ```
 

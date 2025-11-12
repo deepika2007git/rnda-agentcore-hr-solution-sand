@@ -544,24 +544,40 @@ AgentCore natively supports ARM64 architecture, providing better performance and
 
 ## Cost Estimate
 
-Approximate monthly costs:
-- **Cognito**: Free for first 50,000 MAUs (Monthly Active Users)
-- **AgentCore Runtime**: $0.10 per hour active + $0.000008 per request
-- **Bedrock Model Usage**: Pay-per-token (varies by model, ~$0.003 per 1K input tokens for Claude Sonnet)
-- **Lambda**: Free tier covers most demos ($0.20 per 1M requests after free tier)
-- **API Gateway**: $3.50 per million requests
-- **CloudFront**: $0.085 per GB + $0.01 per 10,000 requests
-- **S3**: $0.023 per GB-month (negligible for static hosting)
-- **ECR**: $0.10 per GB-month for container image storage
-- **CodeBuild**: $0.005 per build minute (ARM64) - only during deployments
-- **CloudWatch Logs**: $0.50 per GB ingested + $0.03 per GB stored
+Approximate monthly costs for US East (N. Virginia) region:
+
+**Authentication & User Management:**
+- **Cognito**: Free for first 10,000 MAUs (Monthly Active Users), then $0.015 per MAU. This demo uses email/password authentication (no SAML/OIDC federation)
+
+**Agent Runtime & Compute:**
+- **AgentCore Runtime**: Consumption-based pricing - $0.0895 per vCPU-hour + $0.00945 per GB-hour (only charged for active processing time, I/O wait is free)
+- **Bedrock Model (Claude Haiku 4.5)**: $0.0008 per 1K input tokens + $0.0016 per 1K output tokens (on-demand pricing)
+- **Lambda (Waiter Function)**: Free tier covers 1M requests/month + 400,000 GB-seconds/month. After free tier: $0.20 per 1M requests + $0.0000166667 per GB-second
+
+**Frontend & Content Delivery:**
+- **CloudFront**: Always free tier includes 1 TB data transfer out/month + 10M HTTP/HTTPS requests/month. After free tier: $0.085 per GB (next 9 TB) + $0.01 per 10,000 HTTPS requests
+- **S3 (Static Hosting)**: $0.023 per GB-month storage + $0.0004 per 1,000 GET requests (negligible for static sites)
+
+**Container Build & Storage:**
+- **ECR**: Free tier: 500 MB/month for 12 months (new customers). After free tier: $0.10 per GB-month for private repository storage
+- **CodeBuild (ARM64)**: Free tier: 100 build minutes/month. After free tier: $0.005 per build minute (only charged during deployments, ~5-10 minutes per deployment)
+
+**Monitoring & Logs:**
+- **CloudWatch Logs**: $0.50 per GB ingested + $0.03 per GB stored (first 5 GB ingestion free)
+
+**Infrastructure (No Cost):**
 - **CloudFormation**: Free for stack operations
 - **IAM**: Free
 
-**Typical demo cost**: $5-15/month with light usage
-- AgentCore runtime (~$7/month if active 1 hour/day)
-- Bedrock model calls (~$1-5/month depending on usage)
-- Other services mostly covered by free tiers
+**Typical demo cost**: $3-10/month with light usage (100-500 requests/month)
+- AgentCore Runtime: ~$0.50-2/month (assuming 30-60 seconds per request, 1 vCPU, 2 GB memory)
+- Bedrock Model: ~$0.50-3/month (depends on prompt/response length)
+- CloudFront, S3, Lambda: Covered by free tiers for light usage
+- ECR: ~$0.10/month (container image ~1 GB)
+- CloudWatch Logs: ~$0.50-1/month
+- Other services: Free or negligible
+
+**Note**: Costs scale with usage. High-volume production workloads will incur higher costs, especially for AgentCore Runtime and Bedrock model invocations.
 
 ## Customizing the UI
 

@@ -191,20 +191,54 @@ function App() {
     const currentPrompt = prompt;
     setPrompt('');
 
+    // Add a placeholder message for the streaming response
+    const streamingMessageIndex = messages.length + 1;
+    setMessages(prev => [...prev, {
+      type: 'agent',
+      content: '',
+      timestamp: new Date()
+    }]);
+
     try {
-      const data = await invokeAgent({ prompt: currentPrompt });
+      let streamedContent = '';
 
-      const agentMessage: Message = {
-        type: 'agent',
-        content: cleanResponse(data.response || ''),
-        timestamp: new Date()
-      };
+      const data = await invokeAgent({
+        prompt: currentPrompt,
+        onChunk: (chunk: string) => {
+          // Accumulate the streamed content
+          streamedContent += chunk;
 
-      setMessages(prev => [...prev, agentMessage]);
+          // Update the last message with the streamed content
+          setMessages(prev => {
+            const updated = [...prev];
+            updated[streamingMessageIndex] = {
+              type: 'agent',
+              content: streamedContent,
+              timestamp: new Date()
+            };
+            return updated;
+          });
+        }
+      });
+
+      // Update with the final cleaned response
+      const finalContent = cleanResponse(data.response || streamedContent);
+      setMessages(prev => {
+        const updated = [...prev];
+        updated[streamingMessageIndex] = {
+          type: 'agent',
+          content: finalContent,
+          timestamp: new Date()
+        };
+        return updated;
+      });
+
       // Show support prompts after agent responds
       setShowSupportPrompts(true);
     } catch (err: any) {
       setError(err.message);
+      // Remove the placeholder message on error
+      setMessages(prev => prev.slice(0, -1));
     } finally {
       setLoading(false);
     }

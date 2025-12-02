@@ -1,5 +1,5 @@
 output "frontend_bucket_name" {
-  description = "Name of the S3 bucket used for the frontend"
+  description = "S3 bucket for frontend build artifacts"
   value       = aws_s3_bucket.frontend.bucket
 }
 
@@ -14,7 +14,7 @@ output "cognito_user_pool_id" {
 }
 
 output "cognito_user_pool_client_id" {
-  description = "Cognito User Pool App Client ID"
+  description = "Cognito SPA client ID"
   value       = aws_cognito_user_pool_client.spa_client.id
 }
 
